@@ -1,9 +1,7 @@
-from settings import r
+from settings import channel, r
 import sys
 
 if __name__ == '__main__':
-    channel = sys.argv[1]
-
     pubsub = r.pubsub()
     pubsub.subscribe(channel)
 

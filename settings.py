@@ -7,3 +7,6 @@ config = {
 }
 
 r = redis.StrictRedis(**config)
+
+channel = "TEMA1"
+total_msgs = 1
