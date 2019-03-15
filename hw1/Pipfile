@@ -7,6 +7,9 @@ verify_ssl = true
 
 [packages]
 pylint = "*"
+click = "*"
+names = "*"
+ipython = "*"
 
 [requires]
 python_version = "3.7"
