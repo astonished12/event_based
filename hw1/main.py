@@ -87,7 +87,7 @@ Constraint = namedtuple('Constraint', 'field, op, value')
 
 
 def get_random_constraint(field):
-    random_op = random.choices(OPS)[0]
+    random_op = random.choice(OPS)
     random_value = FIELD_RANDOM_FUNC[field]()
     return Constraint(field, random_op, random_value)
 
@@ -115,10 +115,15 @@ def get_random_subs(count, fields_percentages, eq_field_percentage):
             count_field_unneeded -= 1
 
     count_eq_field_needed = math.floor(float(eq_percent) / 100 * len(constraints[eq_field]))
-    for i in range(count_eq_field_needed):
-        con = constraints[eq_field][i]
-        new_con = Constraint(con.field, '=', con.value)
-        constraints[eq_field][i] = new_con
+    for idx, con in enumerate(constraints[eq_field]):
+        if count_eq_field_needed != 0:
+            new_con = Constraint(con.field, '=', con.value)
+            count_eq_field_needed -= 1
+        else:
+            op = random.choice(list(set(OPS) - set(['='])))
+            new_con = Constraint(con.field, op, con.value)
+        constraints[eq_field][idx] = new_con
+        
 
     def lget(l, i):
         try:
@@ -126,19 +131,33 @@ def get_random_subs(count, fields_percentages, eq_field_percentage):
         except IndexError:
             return None
 
-    pprint(fields_needed)
-    print(eq_field, eq_percent)
-    pprint(constraints)
-    for i in range(count):
-        cons = []
-        for f in FIELDS:
-            field_con = lget(constraints[f], i)
-            if field_con:
-                con_str = '({}{}{})'.format(*field_con)
-                cons.append(con_str)
-        sub = ';'.join(cons)
-        subs.append(sub)
-        
+    def constraint_exists(l, con):
+        for c in l:
+            if c.field == con.field:
+                return True
+        return False
+
+    all_constraints = []
+
+    for cons in constraints.values():
+        all_constraints += cons
+
+    for idx, con in enumerate(all_constraints):
+        sub_pos = idx % count
+        sub = lget(subs, sub_pos)
+        sub = sub or []
+        exists = True
+        if not sub:
+            sub = []
+            exists = False
+        if constraint_exists(sub, con):
+            continue
+        sub.append(con)
+        if not exists:
+            subs.append(sub)
+        else:
+            subs[sub_pos] = sub
+
     return subs
 
 
@@ -181,9 +200,11 @@ def subscribe(count, field, eq_field):
     percent = int(percent.replace('%', ''))
     eq_field_percentage = (field_name, percent)
     
-    res = get_random_subs(count, fields_percentages, eq_field_percentage)
+    subs = get_random_subs(count, fields_percentages, eq_field_percentage)
 
-    pprint(res)
+    for sub in subs:
+        sub_str = ';'.join(['({}{}{})'.format(con.field, con.op, con.value) for con in sub])
+        print(sub_str)
 
 if __name__ == "__main__":
     cli()
